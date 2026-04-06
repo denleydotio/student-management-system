@@ -14,7 +14,7 @@ This project moves away from manual management of records, providing an automate
 
 ## How To Run
 1. Clone the repository to your local machine.
-
+ https://github.com/denleydotio/student-management-system.git
 2. Ensure you have python installed.
 3. Navigate to the folder the main file is stored in and run `python main.py` on terminal.
 
