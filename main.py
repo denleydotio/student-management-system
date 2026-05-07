@@ -1,115 +1,90 @@
 #main.py
-import json # json file to save student details even after exiting system
-from student import Student # import Student class from student.py
-
-student_list = []  # list to save all students
-
-def load_data():
-    try: # try - except block to prevent crash if no json file found
-        with open("students.json", "r") as file:
-            saved_data = json.load(file) # saves data in json file to saved_data list
-
-            for item in saved_data:
-                s = Student(item["name"], item["age"], item["reg_No"]) # create Student object and assign attributes
-                student_list.append(s) # add created Student object to student_list
-            print("Data loaded successfully!")
-
-    except FileNotFoundError:
-        print("No data found. Start recording!")
-
-def save_data():
-    data_to_save = [] # list to hold created dictionaries to save Student class instances in json file
-    for student in student_list:
-        student_dict = {
-            "name": student.name,
-            "age": student.age,
-            "reg_No": student.reg_No
-        } # create dictionary to store in json file
-        data_to_save.append(student_dict)
-
-    with open("students.json", "w") as file:
-        json.dump(data_to_save, file, indent=4)
-
+import db_manager
 
 def add_student():
-    reg_No = input("Enter Reg_No: ")
-    name = input("Enter name: ")
+    reg_No = input("Enter Reg_No: ").strip()
+    name = input("Enter name: ").strip()
     try: # try - except block to verify input is int
         age = int(input("Enter age: "))
     except ValueError:
         print("Enter valid age")
         return # return to main loop
 
-    for student in student_list:
-        if student.reg_No == reg_No:
-            print("Student already exists!")
-            return # return to main function if reg_No already exists
-                    #data not saved
-
-    s = Student(name, age, reg_No)
-    student_list.append(s) # add s to student_list
-    save_data()
-    print("Records saved")
+    success = db_manager.add_student_to_database(reg_No, name, age)
+    if success:
+        print("Student record created")
+    else:
+        print(f"Error: Student {reg_No} already exists")
 
 def view_students():
-    if len(student_list) == 0:
-        print("No records exist")
-        return
-    for student in student_list:
-        student.display_details()
+    results = db_manager.display_all_students()
+    for student in results:
+        print(f"Reg: {student[1]} | Name: {student[2]} | Age: {student[3]}")
 
 def search_student():
-    index = input("Enter Reg_No: ")
-    for student in student_list:
-        if index == student.reg_No:
-            student.display_details()
-            return  #break out of function if student found
+    reg_no = input("Enter reg_no: ")
+    results = db_manager.search_students(reg_no)
 
-    print(f"{index} does not exist in records!")
+    if not results:
+        print(f"Student '{reg_no}' not found")
+    else:
+        for student in results:
+            print(f"Reg: {student[1]} | Name: {student[2]} | Age: {student[3]}")
 
 def update_student():
-    index = input("Enter Reg_No: ") # request student to be updated
-    for student in student_list:
-        if index == student.reg_No: # check if input matches existing reg_No
-            print("Input new details.")
-            new_reg = input("Enter Reg_No: ")
-            for other_student in student_list:
-                if other_student.reg_No == new_reg and other_student != student: # check if reg_no already exists
-                    print("Error! Reg_No belongs to another student.")
-                    return # prevents updating to reg_no belonging to another student
-            new_name = input("Enter name: ")
-            try: # try - except to ensure age is int preventing crash
-                new_age = int(input("Enter age: "))
-            except ValueError:
-                    print("Enter valid student details")
-                    return # back to main function
-            student.reg_No = new_reg
-            student.name = new_name
-            student.age = new_age
-            print("Record Updated")
-            save_data()
-            return # kill function
+    reg_no = (input("Enter reg_no: "))
+    print("Select record to update")
+    print("  1. Student reg_no")
+    print("  2. Student name")
+    print("  3. Student age")
+    option = int(input("Select option: "))
 
-    print(f"{index} does not exist!") # function wasn't killed so record not found
+    match option:
+        case 1:
+            reg_no_new = input("Enter Reg_No: ")
+            success = db_manager.update_student_reg(reg_no_new, reg_no)
+            if success:
+                print("Update saved")
+            else:
+                print(f"Student {reg_no} not found")
+        case 2:
+            name = input("Enter name: ")
+            success = db_manager.update_student_name(name, reg_no)
+            if success:
+                print("Update saved")
+            else:
+                print(f"Student {reg_no} not found")
+        case 3:
+            try:
+                age = int(input("Enter age:"))
+            except ValueError:
+                print("Enter valid input")
+                return
+            success = db_manager.update_student_age(age, reg_no)
+            if success:
+                print("Update saved")
+            else:
+                print(f"Student {reg_no} not found")
+        case _:
+            print("Enter valid input")
+            return
 
 def delete_student():
-    index = input("Enter Reg_No: ")
-    for student in student_list:
-        if index == student.reg_No:
-            choice = input("Delete Record(Y/N): ") # ask if user wants to commit to deleting a record
-            if choice.upper() == "Y":
-                student_list.remove(student) # delete record from list
-                print("Student deleted successfully!")
-                save_data()
-                return # exit function if student found
-            else:
-                print("Delete cancelled!")
-                return
+    reg_no = (input("Enter reg_no: "))
+    validation = input("Proceed to delete(y/n): ")
+    if validation.upper() == "Y":
+        db_manager.delete_student_record(reg_no)
+        print("Student record deleted!")
+    elif validation.upper() == "N":
+        print("Halting delete procedure!")
+        return
 
-    print(f"{index} does not exist")
+    else:
+        print("Input valid choice!")
+        return
 
 def main():
-    load_data()
+    db_manager.setup_database()
     while True:
         print("=====Student Management System=====")
         print("     1. View Students")
@@ -137,11 +112,11 @@ def main():
             case 5:
                 delete_student()
             case 6:
-                save_data()
                 print("System Exit")
                 break
             case _: # checks for int ! 1 to 6
                 print("Invalid Option! Select from 1 to 6")
 
-main()
+if __name__ == "__main__":
+    main()
 
