@@ -14,7 +14,7 @@ This project moves away from manual management of records, providing an automate
 
 ## How To Run
 1. Clone the repository to your local machine.
-'git clone[]'
+'git clone[https://github.com/denleydotio/student-management-system.git]'
 2. Set up the Environment Variables
 * Rename '.env.example' file to '.env'
 * Open '.env' and fill in your local MYSQL credentials 
