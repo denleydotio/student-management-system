@@ -1,4 +1,3 @@
-#db_manager.py
 import mysql.connector
 import config
 
