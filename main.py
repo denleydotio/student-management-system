@@ -1,4 +1,3 @@
-#main.py
 import db_manager
 
 def add_student():
